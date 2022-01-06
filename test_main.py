@@ -1,18 +1,12 @@
 from unittest import TestCase
-from main import find_path
+from main import PathFinder
 import wikipediaapi
 
 
 class Test(TestCase):
-    def test_find_path_base(self):
-        wiki = wikipediaapi.Wikipedia('en')
-        path = find_path('Avril Lavigne', 'Avril Lavigne', wiki)
+    def test_pathfinder_base(self):
+        path = PathFinder.find_path('Avril Lavigne', 'Timmins')
         print(path)
-        self.assert_(len(path) == 1)
+        self.assert_(len(path) == 3)
 
-    def test_find_path_two(self):
-        wiki = wikipediaapi.Wikipedia('en')
-        path = find_path('Avril Lavigne', 'Shania Twain', wiki)
-        print(path)
-        self.assert_(len(path) == 2)
 

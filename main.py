@@ -1,30 +1,44 @@
 import concurrent.futures
+import wikipediaapi
 
 
-def find_path(page, target, wiki) -> list:
-    start = wiki.page(page)
-    end = wiki.page(target)
-    if not start.exists() and not end.exists():
-        raise ValueError('Page or Target Does Not Exist')
-    else:
-        return search_site(start, end, wiki)
+class PathFinder:
+    __wiki = wikipediaapi.Wikipedia('en')
 
+    @staticmethod
+    def __build_layer(page) -> dict:
+        paths = dict()
+        print(page.title)
+        for p in page.links:
+            paths[p] = [page.title, p]
+        return paths
 
-is_page = lambda page, target: page.title == target.title
-
-
-def search_site(page, target, wiki) -> list:
-    path = [page]
-    if is_page(page, target):
-        return path
-    else:
-        executor = concurrent.futures.ProcessPoolExecutor()
-        valid_pages = list()
-        executor.map(print, page.links)
-        executor.map(lambda p: valid_pages.append(p) if is_page(p, target) else False, page.links)
-        if len(valid_pages) > 0:
-            path.append(valid_pages[0])
+    @staticmethod
+    def __search_layer(page, target) -> list:
+        path = [page.title]
+        if page.title == target.title:
             return path
         else:
-            raise ValueError('Not Found')
+            if target.title in page.links:
+                path.append(target.title)
+                return path
+            else:
+                with concurrent.futures.ProcessPoolExecutor() as executor:
+                    pages = list(executor.map(PathFinder.__wiki.page, page.links))
+                    valid = dict()
+                    for link in pages:
+                        valid.update(PathFinder.__build_layer(link))
+                    path.extend(valid[target.title])
+                return path
+
+
+    @staticmethod
+    def find_path(start, end) -> list:
+        page = PathFinder.__wiki.page(start)
+        target = PathFinder.__wiki.page(end)
+        if not (page.exists() and target.exists()):
+            raise ValueError('Page or Target Does Not Exist')
+        else:
+            return PathFinder.__search_layer(page, target)
+
 
