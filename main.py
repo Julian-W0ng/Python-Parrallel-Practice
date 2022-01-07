@@ -1,5 +1,7 @@
 import concurrent.futures
 import wikipediaapi
+import dill
+from pathos.multiprocessing import ProcessingPool
 
 
 class PathFinder:
@@ -23,12 +25,13 @@ class PathFinder:
                 path.append(target.title)
                 return path
             else:
-                with concurrent.futures.ProcessPoolExecutor() as executor:
-                    pages = list(executor.map(PathFinder.__wiki.page, page.links))
-                    valid = dict()
-                    for link in pages:
-                        valid.update(PathFinder.__build_layer(link))
-                    path.extend(valid[target.title])
+                pool = ProcessingPool()
+                pages = list(pool.map(PathFinder.__wiki.page, page.links))
+                paths = pool.map(PathFinder.__build_layer, pages)
+                valid = dict()
+                for p in paths:
+                    valid.update(p)
+                path.extend(valid[target.title])
                 return path
 
 
